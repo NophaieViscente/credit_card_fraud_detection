@@ -7,6 +7,7 @@ import time
 
 class SQLeto : 
 
+    @classmethod
     def __init__(
         self, database:str, 
         user:str, password:str) -> None:
@@ -15,7 +16,7 @@ class SQLeto :
         self.user = user
         self.pwd = password
     
-    
+    @classmethod
     def create_engine(
         self)->sql.engine.Engine :
 
@@ -24,19 +25,19 @@ class SQLeto :
 
         return engine
     
-    
+    @classmethod
     def connect_database(
         self, engine)->sql.engine.Connection :
 
         return engine.connect()
     
-   
+    @classmethod
     def execute_DQL(
         self, query:str)->pd.DataFrame :
 
         return pd.read_sql(query, self.create_engine())
     
-    
+    @classmethod
     def execute_DDL(
         self, query:str)->str:
 
