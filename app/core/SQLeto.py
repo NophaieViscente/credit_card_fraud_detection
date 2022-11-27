@@ -15,6 +15,7 @@ class SQLeto :
         self.user = user
         self.pwd = password
     
+    
     def create_engine(
         self)->sql.engine.Engine :
 
@@ -23,15 +24,18 @@ class SQLeto :
 
         return engine
     
+    
     def connect_database(
         self, engine)->sql.engine.Connection :
 
         return engine.connect()
     
+   
     def execute_DQL(
         self, query:str)->pd.DataFrame :
 
         return pd.read_sql(query, self.create_engine())
+    
     
     def execute_DDL(
         self, query:str)->str:
@@ -39,6 +43,7 @@ class SQLeto :
         conn = self.connect_database(self.create_engine())
         return conn.execute(query)
     
+    @classmethod
     def get_dataframes_to_upload(
         self,
         path:str) :
@@ -57,6 +62,7 @@ class SQLeto :
 
         return list_names
     
+    @classmethod
     def create_type_column(
         self,
         data:pd.DataFrame)->dict :
@@ -78,6 +84,7 @@ class SQLeto :
                 
         return type_columns
     
+    @classmethod
     def creating_tables(
         self,
         dataframe:pd.DataFrame, 
@@ -97,6 +104,7 @@ class SQLeto :
 
         return query
     
+    @classmethod
     def send_dataframes_to_tables(
         self,
         list_names_order:list,
