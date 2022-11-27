@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  postgres-compose:
+    container_name: credit_card_db
+    image: postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${USER_POSTGRES}
+      POSTGRES_PASSWORD: ${PWD_POSTGRES}
+      POSTGRES_DB: ${DATABASE_POSTGRES}
+    ports:
+      - "15432:5432"
+    volumes:
+      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ${POSTGRES_DATA_FOLDER}:/var/lib/postgresql/data
+    networks:
+      - postgres-compose-network
+      
+  pgadmin-compose:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${EMAIL_PGADMIN}
+      PGADMIN_DEFAULT_PASSWORD: ${PWD_PGADMIN}
+    ports:
+      - "16543:80"
+    depends_on:
+      - postgres-compose
+    networks:
+      - postgres-compose-network
+
+networks: 
+  postgres-compose-network:
+    driver: bridge
