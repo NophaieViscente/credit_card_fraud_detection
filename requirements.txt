@@ -28,6 +28,7 @@ Pillow==9.2.0
 platformdirs==2.5.4
 prompt-toolkit==3.0.33
 psutil==5.9.4
+psycopg2==2.9.5
 pure-eval==0.2.2
 Pygments==2.13.0
 pyparsing==3.0.9

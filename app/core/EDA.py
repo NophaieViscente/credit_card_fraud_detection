@@ -97,3 +97,12 @@ class EDA :
             dict_map_classes).value_counts().items() :
 
             print(f'Percentage of {tuple[0]}: {round(tuple[1]/len(dataframe)*100, 1)}%')
+    
+    @staticmethod
+    def plot_correlation(
+        dataframe:pd.DataFrame,
+        annot:bool=False)->sns :
+
+        correlation = dataframe.corr()
+        sns.heatmap(data=correlation, annot=annot)
+        return plt.show()
