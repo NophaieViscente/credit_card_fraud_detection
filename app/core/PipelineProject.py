@@ -1,4 +1,5 @@
 import pandas as pd
+from collections import defaultdict
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.metrics import (
     accuracy_score,
@@ -17,6 +18,7 @@ class PrepareDataAndTrainingModels:
         is_only_numeric_cols: bool = True,
         random_state: int = 42,
         test_size: float = 0.3,
+        balance: bool = False,
         **kwargs,
     ) -> None:
 
@@ -30,6 +32,7 @@ class PrepareDataAndTrainingModels:
         self.X_test = None
         self.Y_test = None
         self.fitted_models = None
+        self.balance = balance
         self.kwargs = kwargs
 
     def get_name_cat_and_num_cols(self) -> None:
@@ -70,11 +73,7 @@ class PrepareDataAndTrainingModels:
         )
 
     def balance_data(self):
-        qt_classes = (
-            self.dataframe[self.target]
-            .value_counts(ascending=True)
-            .reset_index(drop=True)
-        )
+
         print("#" * 50 + "\n\n")
         if self.balance == True:
             print(f"Using tecnique: {self.kwargs['balancer']}")
@@ -95,7 +94,7 @@ class PrepareDataAndTrainingModels:
 
     def fit_models(self, grid_search_cv=False, param=None, cv=5, n_jobs=-1) -> None:
         models = self.kwargs["models"]
-        fitted_models = dict()
+        fitted_models = defaultdict(list)
         for _, model in enumerate(models):
             predictor = model
             if grid_search_cv == True:
@@ -105,17 +104,13 @@ class PrepareDataAndTrainingModels:
                     )
                 predictor = GridSearchCV(predictor, param, cv, n_jobs)
                 predictor.fit(self.X_train, self.Y_train)
-                fitted_models[str(model)] = predictor.best_estimator_
+                fitted_models["Model"].append(predictor.best_estimator_)
 
             else:
                 predictor.fit(self.X_train, self.Y_train)
-                fitted_models[str(model)] = predictor
+                fitted_models["Model"].append(predictor)
 
-        self.fitted_models = (
-            pd.DataFrame(fitted_models)
-            .T.reset_index()
-            .rename(columns={"index": "model"})
-        )
+        self.fitted_models = pd.DataFrame(fitted_models)
 
     def fit_models_cv(self) -> None:
         models = self.kwargs["models"]
@@ -127,7 +122,6 @@ class PrepareDataAndTrainingModels:
                 predictor, cv=5, scoring=self.kwargs["score_metric"]
             )
             print(f"Metric: {self.kwargs['score_metric']} - {scores_.mean()}")
-            print(f"#" * 50)
 
         self.fitted_models = (
             pd.DataFrame(fitted_models)
@@ -167,7 +161,5 @@ class PrepareDataAndTrainingModels:
             )
 
         return (
-            pd.DataFrame(score_models)
-            .T.reset_index()
-            .rename(columns={"index": "model"})
+            pd.DataFrame(score_models).reset_index().rename(columns={"index": "model"})
         )
