@@ -122,7 +122,7 @@ class PrepareDataAndTrainingModels:
 
             if persist == True:
                 self.persist_model(predictor, f"{self.save_path}+{str(model)}.pkl")
-            fitted_models[str(model)] = predictor
+            fitted_models[model.__class__.__name__] = predictor
 
         self.fitted_models = fitted_models
 
