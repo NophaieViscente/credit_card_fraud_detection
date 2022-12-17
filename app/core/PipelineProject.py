@@ -2,7 +2,9 @@ import pandas as pd
 import pickle
 import re
 from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV
+from sklearn.metrics import roc_curve
 from sklearn import preprocessing
+import matplotlib.pyplot as plt
 
 
 class PrepareDataAndTrainingModels:
@@ -148,3 +150,24 @@ class PrepareDataAndTrainingModels:
             .T.reset_index()
             .rename(columns={"index": "model"})
         )
+
+    def plot_roc_curves(self) -> plt:
+
+        dict_ = dict()
+        models = self.kwargs["models"]
+        for _, model in enumerate(models):
+
+            predictor = model.fit(self.X_train, self.Y_train)
+            y_pred = predictor.predict(self.X_test)
+            false_positive_rate, true_positive_rate, threshold = roc_curve(
+                self.Y_test, y_pred
+            )
+
+            plt.subplots(1, figsize=(10, 10))
+            plt.title(f"Receiver Operating Characteristic - {str(model)}")
+            plt.plot(false_positive_rate, true_positive_rate)
+            plt.plot([0, 1], ls="--")
+            plt.plot([0, 0], [1, 0], c=".7"), plt.plot([1, 1], c=".7")
+            plt.ylabel("True Positive Rate")
+            plt.xlabel("False Positive Rate")
+        return plt.show()
