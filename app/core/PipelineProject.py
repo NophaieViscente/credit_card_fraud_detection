@@ -2,7 +2,8 @@ import pandas as pd
 import pickle
 import re
 from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, roc_auc_score
+import numpy as np
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 
@@ -129,7 +130,9 @@ class PrepareDataAndTrainingModels:
         models = self.kwargs["models"]
         predictions = dict()
         for _, model in enumerate(models):
-            predictions[str(model)] = model.predict(self.X_test, self.Y_test)
+            predictions[model.__class__.__name__] = model.predict(
+                self.X_test, self.Y_test
+            )
 
         self.models_predictions = predictions
 
@@ -138,12 +141,14 @@ class PrepareDataAndTrainingModels:
         models = self.kwargs["models"]
         metrics = self.kwargs["score_metric"]
         for _, model in enumerate(models):
-            score_models[str(model)] = dict()
+            score_models[model.__class__.__name__] = dict()
             predictor = model
             prediction = predictor.predict(self.X_test)
             for _, metric in enumerate(metrics):
                 name_metric = re.sub(r"(^<f\w*n|(at (.*)))", "", str(metric)).strip()
-                score_models[str(model)][name_metric] = metric(self.Y_test, prediction)
+                score_models[model.__class__.__name__][name_metric] = metric(
+                    self.Y_test, prediction
+                )
 
         return (
             pd.DataFrame(score_models)
@@ -151,23 +156,49 @@ class PrepareDataAndTrainingModels:
             .rename(columns={"index": "model"})
         )
 
-    def plot_roc_curves(self) -> plt:
+    def plot_roc_curves(
+        self, cross_val: bool = False, grid_search_cv: bool = False, param=None
+    ) -> plt:
 
-        dict_ = dict()
-        models = self.kwargs["models"]
-        for _, model in enumerate(models):
+        result_table = pd.DataFrame(columns=["classifiers", "fpr", "tpr", "auc"])
+        # self.fit_models(cross_val=cross_val, grid_search_cv=grid_search_cv, param=None)
+        for key, model in self.fitted_models.items():
+            yproba = model.predict(self.X_test)
 
-            predictor = model.fit(self.X_train, self.Y_train)
-            y_pred = predictor.predict(self.X_test)
-            false_positive_rate, true_positive_rate, threshold = roc_curve(
-                self.Y_test, y_pred
+            fpr, tpr, _ = roc_curve(self.Y_test, yproba)
+            auc = roc_auc_score(self.Y_test, yproba)
+
+            result_table = result_table.append(
+                {
+                    "classifiers": model.__class__.__name__,
+                    "fpr": fpr,
+                    "tpr": tpr,
+                    "auc": auc,
+                },
+                ignore_index=True,
             )
 
-            plt.subplots(1, figsize=(10, 10))
-            plt.title(f"Receiver Operating Characteristic - {str(model)}")
-            plt.plot(false_positive_rate, true_positive_rate)
-            plt.plot([0, 1], ls="--")
-            plt.plot([0, 0], [1, 0], c=".7"), plt.plot([1, 1], c=".7")
-            plt.ylabel("True Positive Rate")
-            plt.xlabel("False Positive Rate")
-        return plt.show()
+        # Set name of the classifiers as index labels
+        result_table.set_index("classifiers", inplace=True)
+
+        fig = plt.figure(figsize=(8, 6))
+
+        for i in result_table.index:
+            plt.plot(
+                result_table.loc[i]["fpr"],
+                result_table.loc[i]["tpr"],
+                label="{}, AUC={:.3f}".format(i, result_table.loc[i]["auc"]),
+            )
+
+        plt.plot([0, 1], [0, 1], color="orange", linestyle="--")
+
+        plt.xticks(np.arange(0.0, 1.1, step=0.1))
+        plt.xlabel("False Positive Rate", fontsize=15)
+
+        plt.yticks(np.arange(0.0, 1.1, step=0.1))
+        plt.ylabel("True Positive Rate", fontsize=15)
+
+        plt.title("ROC Curve Analysis", fontweight="bold", fontsize=15)
+        plt.legend(prop={"size": 13}, loc="lower right")
+
+        plt.show()
