@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import re
 from sklearn.model_selection import train_test_split, cross_validate, GridSearchCV
 from sklearn import preprocessing
 
@@ -139,7 +140,8 @@ class PrepareDataAndTrainingModels:
             predictor = model
             prediction = predictor.predict(self.X_test)
             for _, metric in enumerate(metrics):
-                score_models[str(model)][metric] = metric(self.Y_test, prediction)
+                name_metric = re.sub(r"(^<f\w*n|(at (.*)))", "", str(metric)).strip()
+                score_models[str(model)][name_metric] = metric(self.Y_test, prediction)
 
         return (
             pd.DataFrame(score_models)
